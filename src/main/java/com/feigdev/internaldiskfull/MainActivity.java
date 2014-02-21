@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.*;
@@ -61,7 +62,8 @@ public class MainActivity extends ActionBarActivity {
      */
     public static class PlaceholderFragment extends Fragment {
         private static final String TAG = "PlaceholderFragment";
-        private TextView tv;
+        private Button btn;
+        private static FileWriteTask fileWriteTask;
 
         public PlaceholderFragment() {
         }
@@ -70,42 +72,61 @@ public class MainActivity extends ActionBarActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            tv = (TextView) rootView.findViewById(R.id.tv);
+            btn = (Button) rootView.findViewById(R.id.stop);
+
+            if (null != fileWriteTask)
+                fileWriteTask.cancel(true);
+            fileWriteTask = new FileWriteTask();
+            fileWriteTask.execute();
+
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (null != fileWriteTask)
+                        fileWriteTask.cancel(true);
+                }
+            });
+
             return rootView;
         }
 
         @Override
-        public void onResume() {
-            super.onResume();
-            new FileWriteTask().execute();
+        public void onPause() {
+            super.onPause();
+            if (null != fileWriteTask)
+                fileWriteTask.cancel(true);
         }
 
         private class FileWriteTask extends AsyncTask<Void, Void, Void> {
 
             @Override
             protected Void doInBackground(Void... params) {
-                int count = 7000;
                 byte[] byteArray = generateByteArray();
-                while (true) {
-                    try {
-                        FileOutputStream fos = getActivity().openFileOutput("myBigDumbFile" + count, Context.MODE_PRIVATE);
-                        String filePath = getActivity().getFileStreamPath("myBigDumbFile" + count).getPath();
+                FileOutputStream fos = null;
+                try {
+                    fos = getActivity().openFileOutput("myBigDumbFile", Context.MODE_PRIVATE);
+                    String filePath = getActivity().getFileStreamPath("myBigDumbFile").getPath();
 
-                        Log.d(TAG, "filePath: " + filePath);
-                        count++;
-
+                    Log.d(TAG, "filePath: " + filePath);
+                    while (true) {
                         fos.write(byteArray);
                         fos.flush();
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
                         fos.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
+                return null;
             }
 
-            public byte[] generateByteArray(){
+            public byte[] generateByteArray() {
                 Bitmap bmp = ImgLoader.generatePic(getActivity());
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
