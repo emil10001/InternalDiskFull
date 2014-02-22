@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,13 +12,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
 import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
@@ -62,7 +58,8 @@ public class MainActivity extends ActionBarActivity {
      */
     public static class PlaceholderFragment extends Fragment {
         private static final String TAG = "PlaceholderFragment";
-        private Button btn;
+        private Button stopBtn, startBtn;
+        private TextView status;
         private static FileWriteTask fileWriteTask;
 
         public PlaceholderFragment() {
@@ -72,18 +69,29 @@ public class MainActivity extends ActionBarActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            btn = (Button) rootView.findViewById(R.id.stop);
+            status = (TextView) rootView.findViewById(R.id.status);
+            status.setText("not running");
 
-            if (null != fileWriteTask)
-                fileWriteTask.cancel(true);
-            fileWriteTask = new FileWriteTask();
-            fileWriteTask.execute();
+            startBtn = (Button) rootView.findViewById(R.id.start);
+            stopBtn = (Button) rootView.findViewById(R.id.stop);
 
-            btn.setOnClickListener(new View.OnClickListener() {
+            startBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (null != fileWriteTask)
                         fileWriteTask.cancel(true);
+                    fileWriteTask = new FileWriteTask();
+                    fileWriteTask.execute();
+
+                    status.setText("running");
+                }
+            });
+            stopBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (null != fileWriteTask)
+                        fileWriteTask.cancel(true);
+                    status.setText("not running");
                 }
             });
 
